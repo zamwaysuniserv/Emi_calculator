@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>EMI Full Result</title>
+
+<style>
+body{
+  font-family:Arial;
+  background:#e6f0ff;
+  padding:30px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+  box-shadow:0 0 10px rgba(0,0,0,.2);
+  margin-bottom:30px;
+}
+th,td{
+  border:1px solid #000;
+  padding:8.5px;
+  text-align:center;
+  white-space:nowrap;
+}
+th{background:#61c478;}
+h2{text-align:center;}
+.emi-title{text-align:center;font-size:20px;font-weight:bold;margin:30px 0;}
+
+button{
+  padding:6px 10px;
+  border:none;
+  cursor:pointer;
+  border-radius:4px;
+}
+.payBtn{background:#28a745;color:#fff;}
+.statusBtn{background:#007bff;color:#fff;}
+.paid{background:#d4edda;}
+
+@media print {
+  .statusCol, .statusBtn, button {
+    display: none !important;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<h2>Customer EMI Full Result</h2>
+
+<button onclick="window.print()" style="background:#007bff;color:#fff;margin-bottom:15px;">
+Download PDF
+</button>
+
+<button onclick="viewReceipt()" style="background:#16a34a;color:#fff;margin-left:10px;">
+View Receipt
+</button>
+
+<button onclick="viewPaidBills()" style="background:#22c55e;color:#fff;margin-left:10px;">
+Paid Bills
+</button>
+
+<!-- MAIN SUMMARY -->
+<table>
+<thead>
+<tr>
+<th>Customer</th>
+<th>Mobile</th>
+<th>Plot No</th>
+<th>Plot Size(dec)</th>
+<th>1 Dec Price</th>
+<th>Total Plot Price</th>
+<th>Deposit</th>
+<th>Loan</th>
+<th>EMI</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody id="mainTable"></tbody>
+</table>
+
+<p class="emi-title">EMI Schedule (Reducing Balance)</p>
+
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th>Opening Balance</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>EMI</th>
+<th>Closing Balance</th>
+<th>EMI Date</th>
+<th class="statusCol">Status</th>
+</tr>
+</thead>
+<tbody id="emiSchedule"></tbody>
+</table>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const userId = params.get("userId");
+let data = JSON.parse(localStorage.getItem(userId));
+
+if(!data){
+  alert("No data found");
+  location.href="index.html";
+}
+
+// Force numbers
+data.decimal = Number(data.decimal || 0);
+data.totalPlotPrice = Number(data.totalPlotPrice || 0);
+data.depositAmount = Number(data.depositAmount || 0);
+data.loanAmount = Number(data.loanAmount || 0);
+data.interest = Number(data.interestRate || 0);
+data.duration = Number(data.duration || 0);
+data.date = data.date || new Date().toISOString().split('T')[0];
+
+// ✅ AUTO PRICE PER DECIMAL
+data.pricePerDec = data.decimal ? (data.totalPlotPrice / data.decimal) : 0;
+
+// EMI calculation
+const monthlyRate = data.interest / 12 / 100;
+data.emi = data.loanAmount * monthlyRate * Math.pow(1 + monthlyRate, data.duration) /
+           (Math.pow(1 + monthlyRate, data.duration) - 1);
+
+// Render main summary
+function renderMain(){
+document.getElementById("mainTable").innerHTML = `
+<tr>
+<td>${data.customerName}</td>
+<td>${data.mobile}</td>
+<td>${data.plotNumber}</td>
+<td>${data.decimal}</td>
+<td>₹${data.oneDecPrice.toFixed(2)}</td>
+<td>₹${data.totalPlotPrice.toFixed(2)}</td>
+<td>₹${data.depositAmount.toFixed(2)}</td>
+<td>₹${data.loanAmount.toFixed(2)}</td>
+<td>₹${data.emi.toFixed(2)}</td>
+<td>${data.duration} Months</td>
+</tr>`;
+}
+
+function viewReceipt(){
+  window.location.href = "user-view.html?userId=" + userId;
+}
+
+function viewPaidBills(){
+  window.location.href = "paid-bills.html?userId=" + userId;
+}
+
+data.oneDecPrice = data.decimal 
+  ? (data.totalPlotPrice / data.decimal) 
+  : 0;
+
+// EMI schedule
+function generateEMI(){
+let balance = data.loanAmount;
+let rows = "";
+let startDate = new Date(data.date);
+
+for(let month=1; month<=data.duration; month++){
+  let interestAmt = balance * monthlyRate;
+  let principalAmt = data.emi - interestAmt;
+  let closingBalance = balance - principalAmt;
+  if(closingBalance < 0) closingBalance = 0;
+
+  let emiDate = new Date(startDate);
+  emiDate.setMonth(startDate.getMonth() + month);
+  let emiDateStr = emiDate.toLocaleDateString("en-GB");
+
+const statusKey = `emi_status_${userId}_${month}`;
+const emiStatus = localStorage.getItem(statusKey);
+
+const paidClass = emiStatus === "PAID" ? "paid" : "";
+
+rows += `<tr class="${paidClass}">
+
+    <td>${month}</td>
+    <td>₹${balance.toFixed(2)}</td>
+    <td>₹${principalAmt.toFixed(2)}</td>
+    <td>₹${interestAmt.toFixed(2)}</td>
+    <td>₹${data.emi.toFixed(2)}</td>
+    <td>₹${closingBalance.toFixed(2)}</td>
+    <td>${emiDateStr}</td>
+    <td class="statusCol">
+      <button class="statusBtn" onclick="openStatus(${month})">Check</button>
+    </td>
+  </tr>`;
+
+  balance = closingBalance;
+}
+
+document.getElementById("emiSchedule").innerHTML = rows;
+}
+
+function openStatus(month){
+  window.open(`status.html?userId=${userId}&month=${month}`, "_blank");
+}
+
+// INIT
+renderMain();
+generateEMI();
+</script>
+
+</body>

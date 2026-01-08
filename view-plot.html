@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>View Plot Details</title>
+
+<style>
+body{
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:linear-gradient(135deg,#eef2f7,#f9fbfd);
+  padding:20px;
+}
+
+.container{
+  max-width:750px;
+  margin:40px auto;
+  background:#fff;
+  padding:25px;
+  border-radius:14px;
+  box-shadow:0 12px 28px rgba(0,0,0,0.1);
+}
+
+h2{
+  text-align:center;
+  color:#333;
+  margin-bottom:20px;
+}
+
+.details{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:20px;
+  background:#f9fafb;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px dashed #ddd;
+}
+
+.row:last-child{
+  border-bottom:none;
+}
+
+.label{
+  font-weight:600;
+  color:#374151;
+}
+
+.value{
+  color:#111827;
+}
+
+.status{
+  padding:4px 12px;
+  border-radius:6px;
+  font-weight:bold;
+  font-size:13px;
+}
+
+.green{background:#6ee7a8;color:#065f46}
+.yellow{background:#fde68a;color:#78350f}
+.red{background:#fca5a5;color:#7f1d1d}
+
+.actions{
+  margin-top:25px;
+  display:flex;
+  justify-content:center;
+  gap:12px;
+}
+
+button{
+  padding:10px 20px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+  color:#fff;
+}
+
+.back{background:#6b7280}
+.edit{background:#0ea5e9}
+.viewall{background:#16a34a}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>📄 Plot Details</h2>
+
+  <div class="details" id="plotDetails"></div>
+
+  <div class="actions">
+    <button class="back" onclick="goBack()">⬅ Back</button>
+    <button class="edit" onclick="editPlot()">✏ Edit</button>
+    <button class="viewall" onclick="viewAll()">📋 View All</button>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const plotNo = params.get("plotNo");
+
+const registeredPlots =
+  JSON.parse(localStorage.getItem("registeredPlots") || "{}");
+
+const user_index = JSON.parse(localStorage.getItem("user_index") || "[]");
+
+function isPlotSold(plotNo){
+  return user_index.some(id=>{
+    const u = JSON.parse(localStorage.getItem(id));
+    return u && u.plotNumber === plotNo;
+  });
+}
+
+const box = document.getElementById("plotDetails");
+
+if(!plotNo || !registeredPlots[plotNo]){
+  box.innerHTML = "<p>❌ Plot not found</p>";
+}else{
+  const p = registeredPlots[plotNo];
+
+ let sold = isPlotSold(plotNo);
+
+let statusClass =
+  sold ? "red" :
+  p.status === "reserved" ? "yellow" : "green";
+
+let statusText =
+  sold ? "SOLD" :
+  (p.status || "unsold").toUpperCase();
+
+
+  box.innerHTML = `
+    <div class="row">
+      <div class="label">Plot No</div>
+      <div class="value">${plotNo.replace(/(\D)(\d+)/,"$1-$2")}</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Plot Size</div>
+      <div class="value">${p.size} Decimal</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Square Feet</div>
+      <div class="value">${p.sqft} Sq Ft</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Right Side</div>
+      <div class="value">${p.right || "-"}</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Left Side</div>
+      <div class="value">${p.left || "-"}</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Front Side</div>
+      <div class="value">${p.front || "-"}</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Back Side</div>
+      <div class="value">${p.back || "-"}</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Price per Decimal</div>
+      <div class="value">₹ ${p.pricePerDec}</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Net Amount</div>
+      <div class="value">₹ ${p.netAmount}</div>
+    </div>
+
+    <div class="row">
+      <div class="label">Status</div>
+      <div class="value">
+        <span class="status ${statusClass}">
+          ${statusText}
+        </span>
+      </div>
+    </div>
+  `;
+}
+
+function goBack(){
+  window.history.back();
+}
+
+function editPlot(){
+  window.location.href = "plot-register.html?plotNo=" + plotNo;
+}
+
+function viewAll(){
+  // change this page name if needed
+  window.location.href = "viewed-plots.html";
+}
+</script>
+
+</body>
+</html>

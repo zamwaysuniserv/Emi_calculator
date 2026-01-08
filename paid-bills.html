@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Paid EMI Bills</title>
+
+<style>
+body{
+  font-family:Arial;
+  background:#f0fdf4;
+  padding:30px;
+}
+
+/* HEADER */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:2px solid #000;
+  padding-bottom:12px;
+  margin-bottom:20px;
+}
+
+.header h2{
+  margin:0;
+}
+
+.printBtn{
+  background:#16a34a;
+  color:#fff;
+  padding:10px 26px;
+  font-size:16px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+/* CUSTOMER INFO */
+.customer-box{
+  background:#fff;
+  border:1px solid #000;
+  padding:15px;
+  margin-bottom:20px;
+}
+
+.customer-row{
+  display:flex;
+  justify-content:space-between;
+  margin:6px 0;
+  font-size:14px;
+}
+
+.label{
+  font-weight:bold;
+}
+
+/* TABLE */
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+}
+
+th,td{
+  border:1px solid #000;
+  padding:10px;
+  text-align:center;
+}
+
+th{
+  background:#5fc590;
+}
+
+tr.paid{
+  background:#dcfce7;
+}
+
+/* PRINT */
+@media print{
+  .printBtn{display:none;}
+  body{background:#fff;}
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h2>✅ Paid EMI Bills</h2>
+  <button class="printBtn" onclick="window.print()">🖨 Print</button>
+</div>
+
+<!-- CUSTOMER DETAILS -->
+<div class="customer-box" id="customerInfo"></div>
+
+<!-- EMI TABLE -->
+<table>
+<thead>
+<tr>
+  <th>EMI No</th>
+  <th>EMI Date</th>
+  <th>Principal</th>
+  <th>Interest</th>
+  <th>EMI Amount</th>
+  <th>Remaining Balance</th>
+</tr>
+</thead>
+<tbody id="paidTable"></tbody>
+</table>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const userId = params.get("userId");
+
+/* USER DATA */
+const userData = JSON.parse(localStorage.getItem(userId) || "{}");
+
+/* PAID EMI LIST */
+const paidBills = JSON.parse(
+  localStorage.getItem(`paid_bills_${userId}`) || "[]"
+);
+
+/* CUSTOMER INFO */
+document.getElementById("customerInfo").innerHTML = `
+  <div class="customer-row"><span class="label">Customer:</span> ${userData.customerName || "-"}</div>
+  <div class="customer-row"><span class="label">Mobile:</span> ${userData.mobile || "-"}</div>
+  <div class="customer-row"><span class="label">Aadhaar:</span> ${userData.aadhaar || "-"}</div>
+  <div class="customer-row"><span class="label">PAN:</span> ${userData.pan || "-"}</div>
+  <div class="customer-row"><span class="label">Plot No:</span> ${userData.plotNumber || "-"}</div>
+  <div class="customer-row"><span class="label">Plot Size:</span> ${userData.decimal || "-"} Decimal (${userData.plotSizeSqFt || "-"} Sq Ft)</div>
+  <div class="customer-row"><span class="label">Net Amount:</span> ₹${(userData.totalPlotPrice || 0).toFixed(2)}</div>
+`;
+
+/* TABLE DATA */
+const table = document.getElementById("paidTable");
+
+if(paidBills.length === 0){
+  table.innerHTML = `
+    <tr>
+      <td colspan="6">No EMI Paid Yet</td>
+    </tr>
+  `;
+}else{
+  paidBills.forEach(bill=>{
+    table.innerHTML += `
+      <tr class="paid">
+        <td>${bill.month}</td>
+        <td>${bill.emiDate}</td>
+        <td>₹${bill.principal.toFixed(2)}</td>
+        <td>₹${bill.interest.toFixed(2)}</td>
+        <td><strong>₹${bill.emiAmount.toFixed(2)}</strong></td>
+        <td>₹${bill.remainingBalance.toFixed(2)}</td>
+      </tr>
+    `;
+  });
+}
+</script>
+
+</body>
+</html>

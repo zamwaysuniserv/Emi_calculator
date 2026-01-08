@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EMI Calculator Form</title>
+
+<style>
+body{
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background: linear-gradient(135deg,#eef2f7,#f9fbfd);
+  padding:30px;
+}
+
+/* FORM CARD */
+form{
+  background:#ffffff;
+  padding:28px;
+  max-width:720px;
+  margin:auto;
+  border-radius:16px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.08);
+}
+
+/* HEAD */
+h2{
+  text-align:center;
+  margin-bottom:25px;
+  color:#2c3e50;
+  font-weight:600;
+}
+
+/* LABELS */
+label{
+  font-weight:600;
+  font-size:14px;
+  color:#34495e;
+  margin-top:12px;
+  display:block;
+}
+
+small{
+  font-weight:400;
+  color:#7f8c8d;
+  margin-top:3px;
+}
+
+/* INPUTS */
+input, select{
+  width:100%;
+  padding:12px 14px;
+  margin-top:6px;
+  border-radius:10px;
+  border:1px solid #dcdfe3;
+  font-size:14px;
+  transition:0.2s;
+}
+
+input:focus, select:focus{
+  outline:none;
+  border-color:#4c84ff;
+  box-shadow:0 0 0 3px rgba(76,132,255,0.15);
+}
+
+input[readonly]{
+  background:#f1f3f5;
+  cursor:not-allowed;
+}
+
+/* BUTTON */
+button{
+  margin-top:22px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(135deg,#4c84ff,#2b63f1);
+  color:#fff;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+button:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 20px rgba(76,132,255,0.35);
+}
+
+/* DROPDOWN COLORS (KEEP LOGIC SAME) */
+select option.sold {
+  background:#dc3545;
+  color:#fff;
+}
+select option.available {
+  background:#28a745;
+  color:#fff;
+}
+select option.reserved {
+  background:#ffc107;
+  color:#000;
+}
+#emiFields {
+  display: none;
+}
+
+#cashInstallmentBox{
+  background:#f8fafc;
+  padding:12px;
+  border-radius:10px;
+  margin-top:10px;
+  border:1px dashed #94a3b8;
+}
+
+/* MOBILE */
+@media(max-width:768px){
+  body{padding:15px;}
+  form{padding:20px;}
+}
+
+
+</style>
+</head>
+
+<body>
+
+<h2>Customer EMI Calculator</h2>
+
+<form>
+
+  <label>Date</label>
+  <input type="date" id="date" required>
+
+  <label>Customer Name</label>
+  <input type="text" id="customerName" required>
+
+  <label>Mobile Number</label>
+  <input type="text" id="mobile" required>
+
+  <label>Address</label>
+  <input type="text" id="address" required>
+
+  <label>Aadhaar Number</label>
+  <input type="text" id="adhar" required>
+
+  <label>PAN Number</label>
+  <input type="text" id="pan" required>
+
+  <label>Plot Number</label>
+  <select id="plotNumber" required></select>
+
+  <label>Plot Description</label>
+  <input type="text" id="plotDesc">
+
+  <label>
+    Plot Size (Decimal)
+    <small>1 Decimal = 435.6 Sq Ft</small>
+  </label>
+  <input type="number" id="decimal" step="0.01" oninput="calculateValues()" required>
+
+  <label>Plot Size (Sq Ft)</label>
+  <input type="number" id="plotSize" readonly>
+
+  <label>Total Plot Price (₹)</label>
+ <input type="number" id="totalPrice" readonly>
+
+  <label>Deposit Amount</label>
+  <input type="number" id="deposit" oninput="calculateValues()" required>
+
+  <!-- CASH INSTALLMENT BOX -->
+<div id="cashFields" style="display:none;">
+  <label>Cash Installment Duration (Months)</label>
+  <input type="number" id="cashDuration" min="1">
+
+  <label>Monthly Cash Amount</label>
+  <input type="number" id="cashPerMonth" readonly>
+</div>
+
+  <label>Remaining Amount</label>
+  <input type="number" id="loanAmount" readonly>
+
+  <label>Payment Method</label>
+<select id="paymentMethod" onchange="togglePayment()">
+  <option value="">Select Method</option>
+  <option value="cash">Cash</option>
+  <option value="emi">EMI</option>
+</select>
+
+<div id="emiFields">
+
+  <label>Interest (%)</label>
+  <input type="number" id="interest" required>
+  
+  <label>Emi Duration (Months)</label>
+  <input type="number" id="duration" required>
+</div>
+
+
+  <button type="button" onclick="calculateEMI()">Submit EMI</button>
+
+</form>
+
+<script>
+// ================= LOAD DATA =================
+let registeredPlots = JSON.parse(localStorage.getItem("registeredPlots") || "{}");
+let user_index = JSON.parse(localStorage.getItem("user_index") || "[]");
+
+const plotSelect = document.getElementById("plotNumber");
+
+// ================= LOAD DROPDOWN =================
+function loadPlotDropdown(){
+  plotSelect.innerHTML = `<option value="">Select Plot</option>`;
+
+  let soldPlots = [];
+  user_index.forEach(uid=>{
+    let user = JSON.parse(localStorage.getItem(uid));
+    if(user && user.plotNumber){
+      soldPlots.push(user.plotNumber);
+    }
+  });
+
+  for(let plotNo in registeredPlots){
+    let plot = registeredPlots[plotNo];
+    let option = document.createElement("option");
+
+    option.value = plotNo;
+    option.text = `${plotNo} (${plot.size} Dec)`;
+
+    if(soldPlots.includes(plotNo)){
+      option.className = "sold";
+      option.text += " - SOLD";
+      option.disabled = true;
+    }
+    else if(plot.status === "reserved"){
+      option.className = "reserved";
+      option.text += " - RESERVED";
+    }
+    else{
+      option.className = "available";
+    }
+    
+    plotSelect.appendChild(option);
+  }
+}
+
+// ================= AUTO FILL DECIMAL =================
+plotSelect.addEventListener("change", ()=>{
+  let plotNo = plotSelect.value;
+  if(plotNo && registeredPlots[plotNo]){
+    decimal.value = registeredPlots[plotNo].size;
+  } else {
+    decimal.value = "";
+  }
+  calculateValues();
+});
+
+// ================= EMI CALC =================
+function calculateValues(){
+  const decimalVal = Number(decimal.value || 0);
+  const sqft = decimalVal * 435.6;
+  plotSize.value = sqft.toFixed(2);
+
+  const plotNo = plotSelect.value;
+
+  if(plotNo && registeredPlots[plotNo]){
+    const pricePerDec = registeredPlots[plotNo].pricePerDec || 0;
+    totalPrice.value = (decimalVal * pricePerDec).toFixed(2);
+  } else {
+    totalPrice.value = "";
+  }
+
+  const total = Number(totalPrice.value || 0);
+  const depositAmt = Number(deposit.value || 0);
+
+  // ✅ THIS IS WHAT YOU WANT
+  loanAmount.value = Math.max(total - depositAmt, 0).toFixed(2);
+}
+
+
+function calculateEMI(){
+
+
+  const method = document.getElementById("paymentMethod").value;
+  const loan = Number(loanAmount.value);
+  cashDuration: Number(document.getElementById("cashDuration")?.value || 1);
+
+
+  // ✅ CASH FLOW (NO EMI)
+  if(method === "cash"){
+
+    const data = {
+      date: date.value,
+      customerName: customerName.value,
+      mobile: mobile.value,
+      address: address.value,
+      aadhaar: adhar.value,
+      pan: pan.value,
+      plotNumber: plotSelect.value,
+      plotDesc: plotDesc.value,
+      decimal: Number(decimal.value),
+      plotSizeSqFt: Number(plotSize.value),
+      totalPlotPrice: Number(totalPrice.value),
+      depositAmount: Number(deposit.value),
+      loanAmount: loan,
+      interestRate: 0,
+      emi: 0,
+      duration: 0,
+      paymentMethod: "cash"
+    };
+
+    const userId = "user_" + Date.now();
+    localStorage.setItem(userId, JSON.stringify(data));
+
+    user_index.push(userId);
+    localStorage.setItem("user_index", JSON.stringify(user_index));
+
+    // ✅ REDIRECT TO CASH RESULT PAGE
+    window.location.href = "result-cash.html?userId=" + userId;
+    return;
+  }
+
+  // ✅ EMI FLOW (ORIGINAL LOGIC)
+  const rate = Number(interest.value);
+  const months = Number(duration.value);
+
+  if(!loan || !rate || !months){
+    alert("Invalid EMI details");
+    return;
+  }
+
+  const r = rate / 12 / 100;
+  const emi = loan * r * Math.pow(1+r,months) / (Math.pow(1+r,months)-1);
+
+  const data = {
+    date: date.value,
+    customerName: customerName.value,
+    mobile: mobile.value,
+    address: address.value,
+    aadhaar: adhar.value,
+    pan: pan.value,
+    plotNumber: plotSelect.value,
+    plotDesc: plotDesc.value,
+    decimal: Number(decimal.value),
+    plotSizeSqFt: Number(plotSize.value),
+    totalPlotPrice: Number(totalPrice.value),
+    depositAmount: Number(deposit.value),
+    loanAmount: loan,
+    interestRate: rate,
+    emi: emi,
+    duration: months,
+    paymentMethod: "emi"
+  };
+
+  const userId = "user_" + Date.now();
+  localStorage.setItem(userId, JSON.stringify(data));
+
+  user_index.push(userId);
+  localStorage.setItem("user_index", JSON.stringify(user_index));
+
+  window.location.href = "result.html?userId=" + userId;
+}
+
+// CASH INSTALLMENT CALCULATION
+document.getElementById("cashDuration")?.addEventListener("input", calculateCashSplit);
+
+function calculateCashSplit(){
+  const total = Number(totalPrice.value || 0);
+  const paidNow = Number(deposit.value || 0);
+  const months = Number(document.getElementById("cashDuration").value || 0);
+
+  const remaining = total - paidNow;
+  if(remaining > 0 && months > 0){
+    document.getElementById("cashPerMonth").value =
+      (remaining / months).toFixed(2);
+  } else {
+    document.getElementById("cashPerMonth").value = "";
+  }
+}
+
+// EXTEND togglePayment WITHOUT TOUCHING IT
+const originalToggle = togglePayment;
+togglePayment = function(){
+  originalToggle();
+
+  const method = document.getElementById("paymentMethod").value;
+  const cashBox = document.getElementById("cashInstallmentBox");
+
+  if(method === "cash"){
+    cashBox.style.display = "block";
+  } else {
+    cashBox.style.display = "none";
+  }
+};
+
+// INIT
+loadPlotDropdown();
+
+function togglePayment(){
+  const method = document.getElementById("paymentMethod").value;
+  const emiBox = document.getElementById("emiFields");
+  const cashBox = document.getElementById("cashFields");
+
+  if(method === "emi"){
+    emiBox.style.display = "block";
+    cashBox.style.display = "none";
+  }
+  else if(method === "cash"){
+    emiBox.style.display = "none";
+    cashBox.style.display = "block";
+  }
+  else{
+    emiBox.style.display = "none";
+    cashBox.style.display = "none";
+  }
+}
+
+
+</script>
+
+</body>
+</html>

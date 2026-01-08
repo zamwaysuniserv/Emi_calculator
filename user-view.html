@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Customer EMI Receipt</title>
+
+<style>
+body{
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:#f3f4f6;
+  padding:30px;
+}
+
+.receipt{
+  max-width:800px;
+  margin:auto;
+  background:#fff;
+  padding:30px;
+  border-radius:16px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.1);
+}
+
+h2{
+  text-align:center;
+  margin-bottom:6px;
+}
+
+.sub{
+  text-align:center;
+  color:#6b7280;
+  margin-bottom:25px;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px dashed #ddd;
+}
+
+.label{font-weight:600}
+.value{text-align:right}
+
+.total{
+  margin-top:20px;
+  padding:15px;
+  background:#f9fafb;
+  border-radius:10px;
+  font-size:16px;
+  font-weight:bold;
+}
+
+.signatures{
+  display:flex;
+  justify-content:space-between;
+  margin-top:50px;
+}
+
+.signature-box{
+  width:40%;
+  text-align:center;
+}
+
+.signature-line{
+  margin-top:50px;
+  border-top:1px solid #000;
+  padding-top:6px;
+  font-weight:600;
+}
+
+/* Hide buttons while printing */
+@media print{
+  .actions{
+    display:none !important;
+  }
+}
+
+
+.actions{
+  margin-top:25px;
+  display:flex;
+  justify-content:center;
+  gap:12px;
+}
+
+button{
+  padding:12px 20px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+  color:#fff;
+}
+
+.print{background:#2563eb}
+.back{background:#6b7280}
+</style>
+</head>
+
+<body>
+
+<div class="receipt">
+  <h2>📄 EMI Receipt</h2>
+  <div class="sub">Customer Details</div>
+
+  <div id="data"></div>
+
+  <div class="signatures">
+  <div class="signature-box">
+    <div class="signature-line">Customer Signature</div>
+  </div>
+
+  <div class="signature-box">
+    <div class="signature-line">Authorized Signature</div>
+  </div>
+</div>
+
+
+  <div class="actions">
+    <button class="print" onclick="window.print()">Print</button>
+    <button class="back" onclick="history.back()">Back</button>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const userId = params.get("userId");
+const box = document.getElementById("data");
+
+if(!userId){
+  box.innerHTML = "<p>Invalid receipt</p>";
+}else{
+  const d = JSON.parse(localStorage.getItem(userId));
+  if(!d){
+    box.innerHTML = "<p>Data not found</p>";
+  }else{
+    box.innerHTML = `
+      <div class="row"><div class="label">Date</div><div class="value">${d.date}</div></div>
+      <div class="row"><div class="label">Customer</div><div class="value">${d.customerName}</div></div>
+      <div class="row"><div class="label">Mobile</div><div class="value">${d.mobile}</div></div>
+      <div class="row"><div class="label">Address</div><div class="value">${d.address}</div></div>
+      <div class="row"><div class="label">Aadhaar</div><div class="value">${d.aadhaar}</div></div>
+      <div class="row"><div class="label">PAN</div><div class="value">${d.pan}</div></div>
+
+      <div class="row"><div class="label">Plot No</div><div class="value">${d.plotNumber}</div></div>
+      <div class="row"><div class="label">Plot Size</div><div class="value">${d.decimal} Dec (${d.plotSizeSqFt} Sq Ft)</div></div>
+      <div class="row"><div class="label">Total Price</div><div class="value">₹ ${d.totalPlotPrice}</div></div>
+      <div class="row"><div class="label">Deposit</div><div class="value">₹ ${d.depositAmount}</div></div>
+      <div class="row"><div class="label">Loan</div><div class="value">₹ ${d.loanAmount}</div></div>
+      <div class="row"><div class="label">Interest</div><div class="value">${d.interestRate}%</div></div>
+      <div class="row"><div class="label">Duration</div><div class="value">${d.duration} Months</div></div>
+
+      <div class="total">Monthly EMI: ₹ ${d.emi.toFixed(2)}</div>
+    `;
+  }
+}
+</script>
+
+</body>
+</html>

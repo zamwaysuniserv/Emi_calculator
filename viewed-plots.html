@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Viewed Plots</title>
+
+<style>
+body{
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:#f3f4f6;
+  padding:20px;
+}
+
+.container{
+  max-width:1000px;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 10px 25px rgba(0,0,0,.08);
+  position:relative;
+}
+
+h2{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+/* DELETE ALL */
+.delete-all{
+  position:absolute;
+  right:20px;
+  top:20px;
+  padding:6px 12px;
+  font-size:12px;
+  background:#dc2626;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+.delete-all:hover{opacity:.9}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  padding:10px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:left;
+  font-size:14px;
+}
+
+th{
+  background:#f9fafb;
+  font-weight:600;
+}
+
+tr:hover{
+  background:#f1f5f9;
+}
+
+button{
+  padding:6px 10px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:13px;
+  color:#fff;
+}
+
+.view{background:#2563eb}
+.delete{background:#dc2626;margin-left:6px}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>📋 Registered / Viewed Plots</h2>
+  <button class="delete-all" onclick="deleteAll()">🗑 Delete All</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Plot No</th>
+        <th>Decimal</th>
+        <th>Sq Ft</th>
+        <th>Price / Dec</th>
+        <th>Net Amount</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="plotTable"></tbody>
+  </table>
+</div>
+
+<script>
+let registeredPlots =
+  JSON.parse(localStorage.getItem("registeredPlots") || "{}");
+
+let viewedPlots =
+  JSON.parse(localStorage.getItem("viewedPlots") || "[]");
+
+const table = document.getElementById("plotTable");
+
+function renderTable(){
+  table.innerHTML = "";
+
+  if(viewedPlots.length === 0){
+    table.innerHTML =
+      `<tr><td colspan="7">No plots available</td></tr>`;
+    return;
+  }
+
+  viewedPlots.forEach(plotNo=>{
+    const p = registeredPlots[plotNo];
+    if(!p) return;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${plotNo.replace(/(\D)(\d+)/,"$1-$2")}</td>
+      <td>${p.size}</td>
+      <td>${p.sqft}</td>
+      <td>₹ ${p.pricePerDec}</td>
+      <td>₹ ${p.netAmount}</td>
+      <td>${p.status}</td>
+      <td>
+        <button class="view" onclick="viewPlot('${plotNo}')">View</button>
+        <button class="delete" onclick="deletePlot('${plotNo}')">Delete</button>
+      </td>
+    `;
+    table.appendChild(tr);
+  });
+}
+
+function viewPlot(plotNo){
+  location.href = "view-plot.html?plotNo=" + plotNo;
+}
+
+function deletePlot(plotNo){
+  if(confirm("Delete plot " + plotNo + " ?")){
+    delete registeredPlots[plotNo];
+    viewedPlots = viewedPlots.filter(p=>p!==plotNo);
+
+    localStorage.setItem(
+      "registeredPlots",
+      JSON.stringify(registeredPlots)
+    );
+    localStorage.setItem(
+      "viewedPlots",
+      JSON.stringify(viewedPlots)
+    );
+
+    renderTable();
+  }
+}
+
+function deleteAll(){
+  if(confirm("⚠ Delete ALL plots permanently?")){
+    localStorage.removeItem("registeredPlots");
+    localStorage.removeItem("viewedPlots");
+    registeredPlots = {};
+    viewedPlots = [];
+    renderTable();
+  }
+}
+
+renderTable();
+</script>
+
+</body>
+</html>

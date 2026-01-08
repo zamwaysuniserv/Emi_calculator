@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Cash Payment Result</title>
+
+<style>
+body{
+  font-family: Arial;
+  background:#e6f0ff;
+  padding:30px;
+}
+
+h2{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+  margin-bottom:30px;
+  box-shadow:0 0 10px rgba(0,0,0,.15);
+}
+
+th, td{
+  border:1px solid #000;
+  padding:8px;
+  text-align:center;
+  white-space:nowrap;
+}
+
+th{
+  background:#61c478;
+}
+
+.emi-title{
+  text-align:center;
+  font-size:20px;
+  font-weight:bold;
+  margin:25px 0;
+}
+
+.statusBtn{
+  background:#007bff;
+  color:#fff;
+  border:none;
+  padding:6px 10px;
+  border-radius:4px;
+  cursor:pointer;
+}
+
+.paid{
+  background:#d4edda;
+}
+
+@media print{
+  .statusCol, .statusBtn, button{
+    display:none !important;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<h2>Customer Cash Payment Result</h2>
+
+<button onclick="window.print()" style="background:#007bff;color:#fff;padding:8px 12px;border:none;border-radius:4px;">
+Download PDF
+</button>
+
+<!-- ================= MAIN SUMMARY ================= -->
+<table>
+<thead>
+<tr>
+  <th>Customer</th>
+  <th>Mobile</th>
+  <th>Plot No</th>
+  <th>Plot Size (dec)</th>
+  <th>1 Dec Price</th>
+  <th>Total Plot Price</th>
+  <th>Deposit</th>
+  <th>Remaining</th>
+  <th>Cash Duration</th>
+</tr>
+</thead>
+<tbody id="mainTable"></tbody>
+</table>
+
+<p class="emi-title">Cash Schedule</p>
+
+<table>
+<thead>
+<tr>
+  <th>Month</th>
+  <th>Remaining Amount</th>
+  <th>Next Date</th>
+  <th class="statusCol">Status</th>
+</tr>
+</thead>
+<tbody id="emiSchedule"></tbody>
+</table>
+
+<script>
+// ================= LOAD DATA =================
+const params = new URLSearchParams(window.location.search);
+const userId = params.get("userId");
+const data = JSON.parse(localStorage.getItem(userId));
+
+if(!data || data.paymentMethod !== "cash"){
+  alert("No cash data found");
+  location.href = "index.html";
+}
+
+// ================= CALCULATIONS =================
+const total = Number(data.totalPlotPrice || 0);
+const deposit = Number(data.depositAmount || 0);
+const remainingTotal = Math.max(total - deposit, 0);
+const duration = Number(data.cashDuration || 1);
+
+const oneDecPrice = data.decimal
+  ? (data.totalPlotPrice / data.decimal)
+  : 0;
+
+// ================= MAIN TABLE RENDER =================
+document.getElementById("mainTable").innerHTML = `
+<tr>
+  <td>${data.customerName}</td>
+  <td>${data.mobile}</td>
+  <td>${data.plotNumber}</td>
+  <td>${data.decimal}</td>
+  <td>₹${oneDecPrice.toFixed(2)}</td>
+  <td>₹${total.toFixed(2)}</td>
+  <td>₹${deposit.toFixed(2)}</td>
+  <td>₹${remainingTotal.toFixed(2)}</td>
+  <td>${duration} Months</td>
+</tr>
+`;
+
+// ================= CASH SCHEDULE =================
+const perMonth = remainingTotal / duration;
+let balance = remainingTotal;
+let startDate = new Date(data.date);
+
+let rows = "";
+
+for(let month = 1; month <= duration; month++){
+
+  balance -= perMonth;
+  if(balance < 0) balance = 0;
+
+  const nextDate = new Date(startDate);
+  nextDate.setMonth(startDate.getMonth() + month);
+
+  const statusKey = `cash_status_${userId}_${month}`;
+  const status = localStorage.getItem(statusKey) || "PENDING";
+  const paidClass = status === "PAID" ? "paid" : "";
+
+  rows += `
+  <tr class="${paidClass}">
+    <td>${month}</td>
+    <td>₹${balance.toFixed(2)}</td>
+    <td>${nextDate.toLocaleDateString("en-GB")}</td>
+    <td class="statusCol">
+      <button class="statusBtn"
+        onclick="window.open(
+          'status.html?userId=${userId}&month=${month}&type=cash',
+          '_blank'
+        )">${status}</button>
+    </td>
+  </tr>
+  `;
+}
+
+document.getElementById("emiSchedule").innerHTML = rows;
+</script>
+
+</body>
+</html>

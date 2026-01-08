@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Plot Registration Dashboard</title>
+
+<style>
+body{
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:linear-gradient(135deg,#eef2f7,#f9fbfd);
+  padding:20px;
+  margin:0;
+  position:relative;
+}
+
+h2{
+  text-align:center;
+  color:#333;
+  margin:0 0 10px 0;
+}
+
+/* HEADER WITH MAP */
+.header{
+  position: relative;
+  text-align:center;
+  margin-bottom:40px;
+}
+
+/* LOCATION MAP BOX */
+.header-map{
+  position:absolute;
+  top:0;
+  right:20px;
+  width:450px;
+  height:350px;
+  border:2px solid #ddd;
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 3px 8px rgba(0,0,0,0.2);
+}
+
+.header-map img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  transition: transform 0.3s ease;
+}
+
+/* TEXT BELOW MAP IMAGE */
+.header-map-text{
+  position:absolute;
+  top:370px;
+  right:180px;
+  width:120px;
+  text-align:center;
+  font-size:13px;
+  font-weight:bold;
+  color:#333;
+}
+
+/* ZOOM CONTROLS */
+.zoom-controls{
+  position:absolute;
+  top:400px;
+  right:190px;
+  display:flex;
+  gap:8px;
+  justify-content:center;
+}
+.zoom-controls button{
+  width:30px;
+  height:30px;
+  border-radius:50%;
+  border:none;
+  font-size:18px;
+  font-weight:bold;
+  cursor:pointer;
+  background:#2563eb;
+  color:#fff;
+  box-shadow:0 3px 8px rgba(0,0,0,0.25);
+}
+.zoom-controls button:hover{
+  background:#1e40af;
+}
+
+/* ================= GRID ================= */
+.plot-grid{
+  display:flex;
+  gap:18px;
+  align-items:flex-start;
+  overflow-x:auto;
+  padding:15px 5px 20px;
+  margin-top: 430px;
+}
+
+/* COLUMN */
+.plot-column{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-width:170px;
+}
+
+/* PLOT CARD */
+.plot-cell{
+  width:160px;
+  padding:12px;
+  border-radius:14px;
+  box-shadow:0 6px 14px rgba(0,0,0,0.12);
+  font-size:13px;
+  cursor:pointer;
+}
+
+.plot-cell strong{
+  font-size:15px;
+}
+
+.plot-info{
+  margin-top:6px;
+  line-height:1.4;
+}
+
+/* STATUS COLORS */
+.green{background:#6ee7a8}
+.yellow{background:#fde68a}
+.red{background:#fca5a5}
+
+/* ADMIN BUTTONS */
+.admin-btns{
+  display:flex;
+  gap:6px;
+  margin-top:8px;
+  flex-wrap:wrap;
+}
+.admin-btns button{
+  padding:4px 8px;
+  font-size:11px;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+}
+.edit-btn{background:#0ea5e9;color:#fff}
+.del-btn{background:#ef4444;color:#fff}
+.view-btn{background:#f59e0b;color:#fff}
+
+/* LEFT STATUS PANEL */
+#statusPanel{
+  position:fixed;
+  top:80px;
+  left:10px;
+  width:180px;
+  background:#fff;
+  padding:12px;
+  border-radius:10px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.15);
+  z-index:1000;
+}
+
+#statusPanel h3{
+  text-align:center;
+  margin:5px 0 10px;
+}
+
+.status-btn{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  border:none;
+  border-radius:6px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.status-btn.sold{background:#fca5a5}
+.status-btn.reserved{background:#fde68a}
+.status-btn.unsold{background:#6ee7a8}
+
+/* DETAILS PANEL */
+#detailsPanel{
+  position:fixed;
+  top:80px;
+  left:210px;
+  width:320px;
+  max-height:80vh;
+  overflow:auto;
+  background:#ffffff;
+  padding:12px;
+  border-radius:10px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.2);
+  display:none;
+  z-index:1000;
+}
+
+.detail-card{
+  background:#f9fafb;
+  border-radius:8px;
+  padding:10px;
+  margin-bottom:10px;
+  font-size:13px;
+  line-height:1.4;
+}
+.detail-card strong{
+  font-size:14px;
+}
+
+</style>
+</head>
+
+<body>
+  <!-- LEFT STATUS PANEL -->
+<div id="statusPanel">
+  <h3>Plot Status</h3>
+  <button class="status-btn sold" onclick="openSoldList()">Sold Plots</button>
+  <button class="status-btn reserved" onclick="showStatus('reserved')">Reserved Plots</button>
+  <button class="status-btn unsold" onclick="showStatus('unsold')">Unsold Plots</button>
+</div>
+
+<!-- DETAILS PANEL -->
+<div id="detailsPanel">
+  <h3 id="detailsTitle">Details</h3>
+  <div id="detailsList"></div>
+</div>
+
+
+<!-- HEADER WITH MAP -->
+<div class="header">
+  <h2>🏡 Plot Dashboard</h2>
+  
+  <div class="header-map">
+    <img src="mouja-map.png" alt="Location Map" id="mapImage">
+  </div>
+
+  <div class="header-map-text">Map / Location</div>
+
+  <!-- ZOOM BUTTONS -->
+  <div class="zoom-controls">
+    <button onclick="zoomIn()">+</button>
+    <button onclick="zoomOut()">−</button>
+    <button onclick="resetZoom()">⟳</button>
+  </div>
+</div>
+
+<!-- PLOT GRID -->
+<div class="plot-grid" id="plotGrid"></div>
+
+<script>
+// REGISTERED PLOTS EXAMPLE
+let registeredPlots = JSON.parse(localStorage.getItem("registeredPlots") || "{}");
+let user_index = JSON.parse(localStorage.getItem("user_index") || "[]");
+
+/* EXCEL COLUMNS A → X */
+const COLUMNS = Array.from({length:24},(_,i)=>String.fromCharCode(65+i));
+
+/* SOLD MAP */
+function getSoldPlotMap(){
+  let map = {};
+  user_index.forEach(id=>{
+    let d = JSON.parse(localStorage.getItem(id));
+    if(d && d.plotNumber){
+      map[d.plotNumber] = id;
+    }
+  });
+  return map;
+}
+
+/* RENDER GRID: vertical A-1 → A-2 → A-3 */
+function renderGrid(){
+  const grid = document.getElementById("plotGrid");
+  grid.innerHTML = "";
+  const soldMap = getSoldPlotMap();
+
+  COLUMNS.forEach(col=>{
+    const colDiv = document.createElement("div");
+    colDiv.className = "plot-column";
+
+    let plotsInColumn = Object.keys(registeredPlots)
+      .filter(p => p.startsWith(col))
+      .map(p => ({
+        plotNo: p,
+        num: parseInt(p.slice(1)),
+        data: registeredPlots[p]
+      }))
+      .sort((a,b)=>a.num-b.num);
+
+    plotsInColumn.forEach(item=>{
+      const cell = document.createElement("div");
+
+      let status = item.data.status || "unsold";
+      let colorClass = soldMap[item.plotNo] ? "red" :
+                       status==="reserved" ? "yellow" : "green";
+
+      cell.className = "plot-cell " + colorClass;
+
+      cell.innerHTML = `
+        <strong>Plot No: ${item.plotNo.replace(/(\D)(\d+)/,"$1-$2")}</strong>
+        <div class="plot-info">
+          Plot Size: ${item.data.size || "--"}<br>
+          Square Feet: ${item.data.sqft || "--"} sq.ft<br>
+          Status: ${soldMap[item.plotNo] ? "Sold" : status}
+        </div>
+        <div class="admin-btns">
+          <button class="edit-btn" onclick="editPlot('${item.plotNo}')">Edit</button>
+        <button class="view-btn" onclick="viewPlot(event,'${item.plotNo}')">View</button>
+          <button class="del-btn" onclick="deletePlot('${item.plotNo}')">Del</button>
+        </div>
+      `;
+
+    if(soldMap[item.plotNo]){
+  cell.onclick = ()=>location.href="result.html?userId="+soldMap[item.plotNo];
+}
+
+
+      colDiv.appendChild(cell);
+    });
+
+    grid.appendChild(colDiv);
+  });
+}
+
+/* ACTIONS */
+function editPlot(p){
+  location.href="plot-register.html";
+}
+
+function viewPlot(event, plotNo){
+  event.stopPropagation(); // 🔴 THIS IS THE KEY LINE
+  location.href = "view-plot.html?plotNo=" + plotNo;
+}
+
+
+function deletePlot(p){
+  if(confirm("Delete "+p+" ?")){
+    delete registeredPlots[p];
+    localStorage.setItem("registeredPlots",JSON.stringify(registeredPlots));
+    renderGrid();
+  }
+}
+
+renderGrid();
+
+/* ================= MAP ZOOM ================= */
+let zoomLevel = 1;
+const mapImage = document.getElementById("mapImage");
+
+function zoomIn(){
+  zoomLevel += 0.1;
+  mapImage.style.transform = `scale(${zoomLevel})`;
+}
+
+function zoomOut(){
+  if(zoomLevel > 0.3){
+    zoomLevel -= 0.1;
+    mapImage.style.transform = `scale(${zoomLevel})`;
+  }
+}
+
+function resetZoom(){
+  zoomLevel = 1;
+  mapImage.style.transform = `scale(1)`;
+}
+
+function openSoldList(){
+  const soldMap = getSoldPlotMap();
+  const soldData = [];
+
+  Object.keys(soldMap).forEach(plotNo=>{
+    const user = JSON.parse(localStorage.getItem(soldMap[plotNo]));
+    const plot = registeredPlots[plotNo];
+
+    if(user && plot){
+      soldData.push({
+        plotNo,
+        customerName: user.customerName,
+        mobile: user.mobile,
+        decimal: plot.size,
+        sqft: plot.sqft,
+        front: plot.front,
+        back: plot.back,
+        right: plot.right,
+        left: plot.left
+      });
+    }
+  });
+
+  // store for next page (Excel-style list)
+  localStorage.setItem("sold_list_data", JSON.stringify(soldData));
+
+  // open separate page
+  window.location.href = "sold-list.html";
+}
+// RESERVED LIST
+function openReservedList(){
+  const data = [];
+
+  Object.keys(registeredPlots).forEach(plotNo=>{
+    const plot = registeredPlots[plotNo];
+    if(plot.status === "reserved"){
+      data.push({
+        plotNo,
+        decimal: plot.size,
+        sqft: plot.sqft,
+        front: plot.front,
+        back: plot.back,
+        right: plot.right,
+        left: plot.left
+      });
+    }
+  });
+
+  localStorage.setItem("reserved_list_data", JSON.stringify(data));
+  window.location.href = "reserved-list.html";
+}
+
+// UNSOLD LIST
+function openUnsoldList(){
+  const soldMap = getSoldPlotMap();
+  const data = [];
+
+  Object.keys(registeredPlots).forEach(plotNo=>{
+    if(!soldMap[plotNo]){
+      const plot = registeredPlots[plotNo];
+      if(!plot.status || plot.status === "unsold"){
+        data.push({
+          plotNo,
+          decimal: plot.size,
+          sqft: plot.sqft,
+          front: plot.front,
+          back: plot.back,
+          right: plot.right,
+          left: plot.left
+        });
+      }
+    }
+  });
+
+  localStorage.setItem("unsold_list_data", JSON.stringify(data));
+  window.location.href = "unsold-list.html";
+}
+
+function showStatus(type){
+  const detailsPanel = document.getElementById("detailsPanel");
+  const detailsList = document.getElementById("detailsList");
+  const title = document.getElementById("detailsTitle");
+
+  detailsList.innerHTML = "";
+  detailsPanel.style.display = "block";
+
+  title.innerText = type.toUpperCase() + " PLOTS";
+
+  const soldMap = getSoldPlotMap();
+
+  Object.keys(registeredPlots).forEach(plotNo=>{
+    const plot = registeredPlots[plotNo];
+    const soldUserId = soldMap[plotNo];
+    let status = soldUserId ? "sold" : plot.status || "unsold";
+
+    if(status !== type) return;
+
+    let customer = {};
+    if(soldUserId){
+      customer = JSON.parse(localStorage.getItem(soldUserId)) || {};
+    }
+
+    detailsList.innerHTML += `
+      <div class="detail-card">
+        <strong>Plot No:</strong> ${plotNo}<br>
+        <strong>Customer:</strong> ${customer.customerName || "-"}<br>
+        <strong>Mobile:</strong> ${customer.mobile || "-"}<br>
+        <strong>Decimal:</strong> ${plot.size}<br>
+        <strong>Sq Ft:</strong> ${plot.sqft}<br>
+        <strong>Front:</strong> ${plot.front || "-"}<br>
+        <strong>Back:</strong> ${plot.back || "-"}<br>
+        <strong>Right:</strong> ${plot.right || "-"}<br>
+        <strong>Left:</strong> ${plot.left || "-"}
+      </div>
+    `;
+  });
+}
+</script>
+
+</body>
+</html>

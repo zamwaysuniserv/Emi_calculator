@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>All Customer Details</title>
+
+  <style>
+    body{
+      font-family: Arial;
+      background:#f4f4f4;
+      padding:20px;
+    }
+
+    /* HEADER */
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+
+    h2{
+      margin:0;
+    }
+
+    .search-box input{
+      padding:8px 12px;
+      width:220px;
+      border:1px solid #ccc;
+      border-radius:6px;
+      font-size:14px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+      box-shadow:0 0 10px rgba(0,0,0,.1);
+    }
+    th, td{
+      border:1px solid #000;
+      padding:10px;
+      text-align:center;
+      white-space:nowrap;
+    }
+    th{
+      background:#d9ead3;
+    }
+    button{
+      padding:6px 12px;
+      border:none;
+      background:#007bff;
+      color:#fff;
+      cursor:pointer;
+      border-radius:4px;
+      margin:2px;
+    }
+    .btn-view{
+      background:#16a34a;
+    }
+    tr:hover{
+      background:#f1f1f1;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h2>All Registered Customers</h2>
+
+  <!-- 🔍 SEARCH -->
+  <div class="search-box">
+    <input
+      type="text"
+      id="searchMobile"
+      placeholder="Search by Mobile No"
+      oninput="searchUser()"
+    />
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Name</th>
+      <th>Mobile</th>
+      <th>Plot No</th>
+      <th>Plot Size (Decimal)</th>
+      <th>Net Amount</th>
+      <th>Loan Amount</th>
+      <th>Actions</th>
+       <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="userTable"></tbody>
+</table>
+
+<script>
+let user_index = JSON.parse(localStorage.getItem("user_index") || "[]");
+let allUsers = [];
+
+/* LOAD USERS */
+user_index.forEach(userId => {
+  let data = JSON.parse(localStorage.getItem(userId));
+  if(data){
+    allUsers.push({ userId, ...data });
+  }
+});
+
+renderTable(allUsers);
+
+/* RENDER TABLE */
+function renderTable(users){
+  let rows = "";
+
+  users.forEach(data => {
+    rows += `
+      <tr>
+        <td>${data.date || "-"}</td>
+        <td>${data.customerName}</td>
+        <td>${data.mobile}</td>
+        <td>${data.plotNumber || "-"}</td>
+        <td>${data.decimal || 0}</td>
+        <td>₹${Number(data.totalPlotPrice || 0).toFixed(2)}</td>
+        <td>₹${Number(data.loanAmount || 0).toFixed(2)}</td>
+        <td>
+          <button onclick="viewUser('${data.userId}')">EMI Details</button>
+        
+        </td>
+        <td>
+          <button class="btn-view" onclick="viewCustomer('${data.userId}')">
+            Customer Details
+          </button>
+          </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("userTable").innerHTML =
+    rows || `<tr><td colspan="8">No users found</td></tr>`;
+}
+
+/* SEARCH BY MOBILE */
+function searchUser(){
+  const value = document.getElementById("searchMobile").value.trim();
+
+  const filtered = allUsers.filter(u =>
+    String(u.mobile).includes(value)
+  );
+
+  renderTable(filtered);
+}
+
+/* ACTIONS */
+function viewUser(userId){
+  window.open("result.html?userId=" + userId, "_blank");
+}
+
+function viewCustomer(userId){
+  window.open("customer-details.html?userId=" + userId, "_blank");
+}
+</script>
+
+</body>
+</html>

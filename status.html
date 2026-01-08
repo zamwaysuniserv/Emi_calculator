@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>EMI Status Bill</title>
+
+<style>
+body{
+  font-family: Arial;
+  background:#f4f4f4;
+  padding:30px;
+}
+
+.bill{
+  max-width:750px;
+  margin:auto;
+  background:#fff;
+  padding:25px;
+  padding-bottom:80px;
+  border:1px solid #000;
+}
+
+h2{
+  text-align:center;
+  margin-bottom:10px;
+}
+
+hr{margin:15px 0;}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  margin:6px 0;
+}
+
+.label{
+  font-weight:bold;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+}
+
+th,td{
+  border:1px solid #000;
+  padding:10px;
+  text-align:center;
+}
+
+th{
+  background:#e6e6e6;
+}
+
+/* STATUS */
+.status-box{
+  margin-top:20px;
+  border:2px dashed #000;
+  padding:15px;
+  height:60px;
+  font-weight:bold;
+  font-size:18px;
+}
+
+.status-actions{
+  margin-top:15px;
+  text-align:center;
+}
+
+.status-actions button{
+  padding:10px 30px;
+  margin:0 10px;
+  border:none;
+  cursor:pointer;
+  font-weight:bold;
+  font-size:16px;
+}
+
+.paidBtn{background:#28a745;color:#fff;}
+.pendingBtn{background:#dc3545;color:#fff;}
+
+/* SIGNATURE */
+.signature{
+  display:flex;
+  justify-content:space-between;
+  margin-top:50px;
+}
+
+.sign-box{
+  width:45%;
+  text-align:center;
+}
+
+.sign-line{
+  border-top:1px solid #000;
+  margin-top:40px;
+  padding-top:5px;
+  font-weight:bold;
+}
+
+/* PRINT BUTTON */
+.print-section{
+  text-align:center;
+  margin-top:30px;
+  padding-top:20px;
+  border-top:1px dashed #ccc;
+}
+
+.printBtn{
+  font-size:18px;
+  padding:14px 36px;
+  background:#007bff;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+/* HIDE ON PRINT */
+@media print{
+  body{background:#fff;}
+  .status-actions,
+  .print-section{
+    display:none;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="bill">
+
+<h2>EMI PAYMENT RECEIPT</h2>
+<hr>
+
+<div id="customerInfo"></div>
+
+<hr>
+
+<table>
+<thead>
+<tr>
+<th>EMI Month</th>
+<th>EMI Date</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>EMI</th>
+<th>Remaining Balance</th>
+</tr>
+</thead>
+<tbody id="emiData"></tbody>
+</table>
+
+<div style="margin-top:15px;">
+  <div class="row">
+    <span class="label">Penalty Amount (₹):</span>
+    <input type="number" id="penaltyInput" value="0"
+           style="width:200px;padding:6px;"
+           oninput="updatePenalty()">
+  </div>
+
+  <div class="row" style="margin-top:10px;">
+    <span class="label">Total Payable (₹):</span>
+    <span id="totalPayable" style="font-weight:bold;">₹0.00</span>
+  </div>
+
+  <div class="row" style="margin-top:6px;">
+    <span class="label">Amount in Words:</span>
+    <span id="amountWords" style="font-style:italic;"></span>
+  </div>
+</div>
+
+<div class="status-box" id="statusText">
+Status: _________________________________
+</div>
+
+<div class="status-actions">
+  <button class="paidBtn" onclick="setStatus('PAID')">PAID</button>
+  <button class="pendingBtn" onclick="setStatus('PENDING')">PENDING</button>
+</div>
+
+<div class="signature">
+  <div class="sign-box">
+    <div class="sign-line">Customer Signature</div>
+  </div>
+  <div class="sign-box">
+    <div class="sign-line">Authorized Signature</div>
+  </div>
+</div>
+
+<div class="print-section">
+  <button class="printBtn" onclick="window.print()">🖨 Print Receipt</button>
+</div>
+
+</div>
+
+<script>
+/* ===============================
+   LOAD PARAMS
+================================ */
+const params = new URLSearchParams(window.location.search);
+const userId = params.get("userId");
+const month = Number(params.get("month"));
+
+let data = JSON.parse(localStorage.getItem(userId));
+if(!data){
+  alert("No data found");
+  window.close();
+}
+
+/* ===============================
+   EMI CALCULATION
+================================ */
+const monthlyRate = data.interestRate / 12 / 100;
+let balance = data.loanAmount;
+
+const emi =
+  data.loanAmount * monthlyRate * Math.pow(1 + monthlyRate, data.duration) /
+  (Math.pow(1 + monthlyRate, data.duration) - 1);
+
+for(let i=1;i<month;i++){
+  let interest = balance * monthlyRate;
+  let principal = emi - interest;
+  balance -= principal;
+}
+
+let interestAmt = balance * monthlyRate;
+let principalAmt = emi - interestAmt;
+let closingBalance = balance - principalAmt;
+if(closingBalance < 0) closingBalance = 0;
+
+/* ===============================
+   EMI DATE
+================================ */
+let startDate = new Date(data.date);
+let emiDate = new Date(startDate);
+emiDate.setMonth(startDate.getMonth() + month);
+let emiDateStr = emiDate.toLocaleDateString("en-GB");
+
+/* ===============================
+   CUSTOMER INFO
+================================ */
+document.getElementById("customerInfo").innerHTML = `
+<div class="row"><span class="label">Customer:</span> ${data.customerName}</div>
+<div class="row"><span class="label">Mobile:</span> ${data.mobile}</div>
+<div class="row"><span class="label">Aadhaar:</span> ${data.aadhaar}</div>
+<div class="row"><span class="label">PAN:</span> ${data.pan}</div>
+<div class="row"><span class="label">Plot No:</span> ${data.plotNumber}</div>
+<div class="row"><span class="label">Plot Size:</span> ${data.decimal} Decimal (${data.plotSizeSqFt} Sq Ft)</div>
+<div class="row"><span class="label">Net Amount:</span> ₹${data.totalPlotPrice}</div>
+`;
+
+/* ===============================
+   EMI ROW
+================================ */
+document.getElementById("emiData").innerHTML = `
+<tr>
+<td>${month}</td>
+<td>${emiDateStr}</td>
+<td>₹${principalAmt.toFixed(2)}</td>
+<td>₹${interestAmt.toFixed(2)}</td>
+<td>₹${emi.toFixed(2)}</td>
+<td>₹${closingBalance.toFixed(2)}</td>
+</tr>
+`;
+
+/* ===============================
+   PERMANENT STATUS
+================================ */
+const statusKey = `emi_status_${userId}_${month}`;
+const savedStatus = localStorage.getItem(statusKey);
+
+if(savedStatus){
+  document.getElementById("statusText").innerHTML =
+    "Status: " + savedStatus;
+}
+
+function setStatus(status){
+  document.getElementById("statusText").innerHTML =
+    "Status: " + status;
+
+  localStorage.setItem(statusKey, status);
+
+  if(status === "PAID"){
+    savePaidBill();
+  }
+}
+
+function savePaidBill(){
+  const key = `paid_bills_${userId}`;
+  let paidBills = JSON.parse(localStorage.getItem(key) || "[]");
+
+  // ❌ Prevent duplicate month entry
+  if(paidBills.some(b => b.month === month)) return;
+
+  paidBills.push({
+    month: month,
+    customerName: data.customerName,
+    emiDate: emiDateStr,
+    principal: principalAmt,
+    interest: interestAmt,
+    emiAmount: emi,
+    remainingBalance: closingBalance,
+    paidOn: new Date().toLocaleDateString("en-GB")
+  });
+
+  localStorage.setItem(key, JSON.stringify(paidBills));
+}
+/* ===============================
+   WORDS + PENALTY
+================================ */
+function numberToWords(num){
+  const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten',
+  'Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  if(num===0) return 'Zero';
+  function w(n){
+    if(n<20) return a[n];
+    if(n<100) return b[Math.floor(n/10)]+' '+a[n%10];
+    if(n<1000) return a[Math.floor(n/100)]+' Hundred '+w(n%100);
+    if(n<100000) return w(Math.floor(n/1000))+' Thousand '+w(n%1000);
+    if(n<10000000) return w(Math.floor(n/100000))+' Lakh '+w(n%100000);
+    return w(Math.floor(n/10000000))+' Crore '+w(n%10000000);
+  }
+  return w(num).trim();
+}
+
+let totalPayable = emi;
+document.getElementById("totalPayable").innerText = "₹"+emi.toFixed(2);
+document.getElementById("amountWords").innerText =
+  numberToWords(Math.round(emi))+" Rupees Only";
+
+function updatePenalty(){
+  const penalty = Number(penaltyInput.value || 0);
+  totalPayable = emi + penalty;
+  totalPayableSpan = document.getElementById("totalPayable");
+  totalPayableSpan.innerText = "₹"+totalPayable.toFixed(2);
+  document.getElementById("amountWords").innerText =
+    numberToWords(Math.round(totalPayable))+" Rupees Only";
+}
+</script>
+
+</body>
+</html>

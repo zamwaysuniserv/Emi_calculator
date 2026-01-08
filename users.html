@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Registered Users</title>
+
+<style>
+body{
+  font-family: Arial;
+  background:#f4f4f4;
+  padding:20px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+}
+th,td{
+  border:1px solid #000;
+  padding:10px;
+  text-align:center;
+}
+th{background:#d9ead3;}
+h2{text-align:center;}
+
+button{
+  padding:6px 12px;
+  border:none;
+  cursor:pointer;
+  border-radius:4px;
+  color:#fff;
+}
+.view-btn{background:#007bff;}
+.delete-btn{background:#dc3545;}
+.delete-all{background:red;margin-bottom:12px;}
+</style>
+</head>
+
+<body>
+
+<h2>Registered Users</h2>
+
+<button class="delete-all" onclick="deleteAllUsers()">Delete All Users</button>
+
+<table>
+<thead>
+<tr>
+  <th>Customer Name</th>
+  <th>Mobile</th>
+  <th>Actions</th>
+</tr>
+</thead>
+<tbody id="userList"></tbody>
+</table>
+
+<script>
+/* 🔐 ADMIN PASSWORD */
+const ADMIN_PASSWORD = "admin123";
+
+/* LOAD USERS */
+let user_index = JSON.parse(localStorage.getItem("user_index") || "[]");
+
+/* RENDER TABLE */
+function renderUsers(){
+  let rows = "";
+
+  user_index.forEach(userId=>{
+    let user = JSON.parse(localStorage.getItem(userId));
+    if(user){
+      rows += `
+      <tr>
+        <td>${user.customerName}</td>
+        <td>${user.mobile}</td>
+        <td>
+          <button class="view-btn" onclick="viewUser('${userId}')">View</button>
+          <button class="delete-btn" onclick="deleteUser('${userId}')">Delete</button>
+        </td>
+      </tr>`;
+    }
+  });
+
+  document.getElementById("userList").innerHTML = rows;
+}
+
+/* VIEW USER */
+function viewUser(userId){
+  window.open("result.html?userId=" + userId, "_blank");
+}
+
+/* DELETE SINGLE USER */
+function deleteUser(userId){
+  const pass = prompt("Enter admin password:");
+  if(pass !== ADMIN_PASSWORD){
+    alert("Wrong password!");
+    return;
+  }
+
+  if(!confirm("Delete this user permanently?")) return;
+
+  localStorage.removeItem(userId);
+  user_index = user_index.filter(id => id !== userId);
+  localStorage.setItem("user_index", JSON.stringify(user_index));
+
+  renderUsers();
+}
+
+/* DELETE ALL USERS */
+function deleteAllUsers(){
+  const pass = prompt("Enter admin password:");
+  if(pass !== ADMIN_PASSWORD){
+    alert("Wrong password!");
+    return;
+  }
+
+  if(!confirm("This will DELETE ALL USERS permanently!")) return;
+
+  user_index.forEach(id=>{
+    localStorage.removeItem(id);
+  });
+
+  localStorage.removeItem("user_index");
+  user_index = [];
+
+  renderUsers();
+}
+
+/* INIT */
+renderUsers();
+</script>
+
+</body>
+</html>

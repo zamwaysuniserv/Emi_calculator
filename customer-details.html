@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Customer EMI Receipt</title>
+
+<style>
+:root{
+  --primary:#2563eb;
+  --secondary:#0f172a;
+  --muted:#6b7280;
+  --bg:#eef2ff;
+  --card:#ffffff;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family: "Inter","Segoe UI",Arial,sans-serif;
+  background:linear-gradient(135deg,#e0e7ff,#f8fafc);
+  padding:40px;
+  color:#111827;
+}
+
+/* CARD */
+.receipt{
+  max-width:900px;
+  margin:auto;
+  background:var(--card);
+  border-radius:20px;
+  box-shadow:0 30px 60px rgba(0,0,0,.12);
+  overflow:hidden;
+}
+
+/* HEADER */
+.header{
+  background:linear-gradient(135deg,#2563eb,#1e40af);
+  color:#fff;
+  padding:30px;
+}
+
+.header h2{
+  margin:0;
+  font-size:26px;
+  letter-spacing:.5px;
+}
+
+.header p{
+  margin-top:6px;
+  font-size:14px;
+  opacity:.9;
+}
+
+/* BODY */
+.content{
+  padding:30px;
+}
+
+/* SECTION */
+.section-title{
+  font-size:16px;
+  font-weight:700;
+  margin-bottom:15px;
+  color:var(--secondary);
+  border-left:4px solid var(--primary);
+  padding-left:10px;
+}
+
+/* GRID */
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px 30px;
+}
+
+.item{
+  display:flex;
+  justify-content:space-between;
+  background:#f9fafb;
+  padding:12px 14px;
+  border-radius:10px;
+  font-size:14px;
+}
+
+.label{
+  color:var(--muted);
+  font-weight:600;
+}
+
+.value{
+  font-weight:600;
+  text-align:right;
+}
+
+/* FULL WIDTH */
+.full{
+  grid-column:0.5 / -1;
+}
+
+/* TOTAL */
+.total-box{
+  margin-top:25px;
+  background:linear-gradient(135deg,#f1f5f9,#e0e7ff);
+  padding:20px;
+  border-radius:14px;
+  text-align:center;
+}
+
+.total-box span{
+  display:block;
+  font-size:14px;
+  color:var(--muted);
+}
+
+.total-box strong{
+  font-size:26px;
+  color:#1e3a8a;
+}
+
+/* SIGNATURE */
+.signatures{
+  display:flex;
+  justify-content:space-between;
+  padding:30px;
+  padding-top:50px;
+}
+
+.sign{
+  width:40%;
+  text-align:center;
+}
+
+.sign .line{
+  margin-top:50px;
+  border-top:2px solid #000;
+  padding-top:6px;
+  font-weight:600;
+}
+
+/* ACTIONS */
+.actions{
+  display:flex;
+  justify-content:center;
+  gap:14px;
+  padding:25px;
+  background:#f8fafc;
+}
+
+button{
+  padding:12px 26px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:600;
+  font-size:15px;
+  background:var(--primary);
+  color:#fff;
+  box-shadow:0 10px 20px rgba(37,99,235,.3);
+}
+
+button:hover{
+  opacity:.9;
+}
+
+/* PRINT */
+@media print{
+  body{padding:0;background:#fff;}
+  .actions{display:none;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="receipt">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h2>Customer Details</h2>
+   
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <div class="section-title">Customer Information</div>
+    <div class="grid" id="data"></div>
+
+  </div>
+
+
+
+ 
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const userId = params.get("userId");
+const box = document.getElementById("data");
+
+if(!userId){
+  box.innerHTML = "<div>Invalid customer</div>";
+}else{
+  const d = JSON.parse(localStorage.getItem(userId));
+  if(!d){
+    box.innerHTML = "<div>Data not found</div>";
+  }else{
+    box.innerHTML = `
+      <div class="item"><span class="label">Date</span><span class="value">${d.date}</span></div>
+      <div class="item"><span class="label">Customer</span><span class="value">${d.customerName}</span></div>
+      <div class="item"><span class="label">Mobile</span><span class="value">${d.mobile}</span></div>
+      <div class="item full"><span class="label">Address</span><span class="value">${d.address || "-"}</span></div>
+      <div class="item"><span class="label">Aadhaar</span><span class="value">${d.aadhaar}</span></div>
+      <div class="item"><span class="label">PAN</span><span class="value">${d.pan}</span></div>
+
+      <div class="item"><span class="label">Plot No</span><span class="value">${d.plotNumber}</span></div>
+      <div class="item"><span class="label">Plot Size</span><span class="value">${d.decimal} Dec (${d.plotSizeSqFt} Sq Ft)</span></div>
+      <div class="item"><span class="label">Total Price</span><span class="value">₹ ${d.totalPlotPrice}</span></div>
+      <div class="item"><span class="label">Deposit</span><span class="value">₹ ${d.depositAmount}</span></div>
+      <div class="item"><span class="label">Loan Amount</span><span class="value">₹ ${d.loanAmount}</span></div>
+      <div class="item"><span class="label">Interest</span><span class="value">${d.interestRate}%</span></div>
+      <div class="item"><span class="label">Duration</span><span class="value">${d.duration} Months</span></div>
+
+      <div class="full">
+        <div class="total-box">
+          <span>Monthly EMI</span>
+          <strong>₹ ${Number(d.emi).toFixed(2)}</strong>
+        </div>
+      </div>
+    `;
+  }
+}
+</script>
+
+</body>
+</html>

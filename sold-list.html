@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sold Plot List</title>
+
+<style>
+body{
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:#f4f6f8;
+  padding:20px;
+}
+
+h2{
+  text-align:center;
+  margin-bottom:15px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+th,td{
+  border:1px solid #ddd;
+  padding:8px;
+  font-size:13px;
+  text-align:center;
+}
+
+th{
+  background:#2563eb;
+  color:#fff;
+  position:sticky;
+  top:0;
+}
+
+tr:nth-child(even){
+  background:#f9fafb;
+}
+
+.back-btn{
+  margin-bottom:12px;
+  padding:8px 14px;
+  border:none;
+  background:#6b7280;
+  color:#fff;
+  border-radius:6px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<button class="back-btn" onclick="history.back()">⬅ Back</button>
+<h2>📄 Sold Plot Excel Sheet</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Plot No</th>
+      <th>Customer Name</th>
+      <th>Mobile</th>
+      <th>Decimal</th>
+      <th>Sq Ft</th>
+      <th>Front</th>
+      <th>Back</th>
+      <th>Right</th>
+      <th>Left</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+
+<script>
+const soldList = JSON.parse(localStorage.getItem("sold_list_data") || "[]");
+const tbody = document.getElementById("tableBody");
+
+if(!soldList.length){
+  tbody.innerHTML = `<tr><td colspan="9">No sold plots found</td></tr>`;
+}else{
+  soldList.forEach(item=>{
+    tbody.innerHTML += `
+      <tr>
+        <td>${item.plotNo}</td>
+        <td>${item.customerName}</td>
+        <td>${item.mobile}</td>
+        <td>${item.decimal}</td>
+        <td>${item.sqft}</td>
+        <td>${item.front || "-"}</td>
+        <td>${item.back || "-"}</td>
+        <td>${item.right || "-"}</td>
+        <td>${item.left || "-"}</td>
+      </tr>
+    `;
+  });
+}
+</script>
+
+</body>
+</html>
