@@ -9,18 +9,29 @@ body{
   background:#f4f4f4;
   padding:20px;
 }
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:15px;
+}
+
+h2{margin:0;}
+
 table{
   width:100%;
   border-collapse:collapse;
   background:#fff;
 }
+
 th,td{
   border:1px solid #000;
   padding:10px;
   text-align:center;
 }
+
 th{background:#d9ead3;}
-h2{text-align:center;}
 
 button{
   padding:6px 12px;
@@ -28,18 +39,31 @@ button{
   cursor:pointer;
   border-radius:4px;
   color:#fff;
+  margin-left:5px;
 }
+
 .view-btn{background:#007bff;}
 .delete-btn{background:#dc3545;}
-.delete-all{background:red;margin-bottom:12px;}
+.delete-all{background:red;}
+.restore-all{background:#16a34a;}
 </style>
 </head>
 
 <body>
 
-<h2>Registered Users</h2>
+<!-- HEADER -->
+<div class="header">
+  <h2>Registered Users</h2>
 
-<button class="delete-all" onclick="deleteAllUsers()">Delete All Users</button>
+  <div>
+    <button class="restore-all" onclick="restoreAllUsers()">
+      Restore All
+    </button>
+    <button class="delete-all" onclick="deleteAllUsers()">
+      Delete All
+    </button>
+  </div>
+</div>
 
 <table>
 <thead>
@@ -56,29 +80,36 @@ button{
 /* 🔐 ADMIN PASSWORD */
 const ADMIN_PASSWORD = "admin123";
 
-/* LOAD USERS */
+/* LOAD USER INDEX */
 let user_index = JSON.parse(localStorage.getItem("user_index") || "[]");
 
-/* RENDER TABLE */
+/* RENDER USERS (ONLY NOT DELETED) */
 function renderUsers(){
   let rows = "";
 
-  user_index.forEach(userId=>{
+  user_index.forEach(userId => {
     let user = JSON.parse(localStorage.getItem(userId));
-    if(user){
+
+    if(user && !user.isDeleted){
       rows += `
-      <tr>
-        <td>${user.customerName}</td>
-        <td>${user.mobile}</td>
-        <td>
-          <button class="view-btn" onclick="viewUser('${userId}')">View</button>
-          <button class="delete-btn" onclick="deleteUser('${userId}')">Delete</button>
-        </td>
-      </tr>`;
+        <tr>
+          <td>${user.customerName}</td>
+          <td>${user.mobile}</td>
+          <td>
+            <button class="view-btn" onclick="viewUser('${userId}')">
+              View
+            </button>
+            <button class="delete-btn" onclick="deleteUser('${userId}')">
+              Delete
+            </button>
+          </td>
+        </tr>
+      `;
     }
   });
 
-  document.getElementById("userList").innerHTML = rows;
+  document.getElementById("userList").innerHTML =
+    rows || `<tr><td colspan="3">No active users</td></tr>`;
 }
 
 /* VIEW USER */
@@ -86,7 +117,7 @@ function viewUser(userId){
   window.open("result.html?userId=" + userId, "_blank");
 }
 
-/* DELETE SINGLE USER */
+/* SOFT DELETE SINGLE USER */
 function deleteUser(userId){
   const pass = prompt("Enter admin password:");
   if(pass !== ADMIN_PASSWORD){
@@ -94,16 +125,18 @@ function deleteUser(userId){
     return;
   }
 
-  if(!confirm("Delete this user permanently?")) return;
+  if(!confirm("Delete this user? (Can be restored later)")) return;
 
-  localStorage.removeItem(userId);
-  user_index = user_index.filter(id => id !== userId);
-  localStorage.setItem("user_index", JSON.stringify(user_index));
+  let user = JSON.parse(localStorage.getItem(userId));
+  if(!user) return;
+
+  user.isDeleted = true;
+  localStorage.setItem(userId, JSON.stringify(user));
 
   renderUsers();
 }
 
-/* DELETE ALL USERS */
+/* SOFT DELETE ALL USERS */
 function deleteAllUsers(){
   const pass = prompt("Enter admin password:");
   if(pass !== ADMIN_PASSWORD){
@@ -111,15 +144,38 @@ function deleteAllUsers(){
     return;
   }
 
-  if(!confirm("This will DELETE ALL USERS permanently!")) return;
+  if(!confirm("Delete ALL users? (Can be restored later)")) return;
 
-  user_index.forEach(id=>{
-    localStorage.removeItem(id);
+  user_index.forEach(userId=>{
+    let user = JSON.parse(localStorage.getItem(userId));
+    if(user){
+      user.isDeleted = true;
+      localStorage.setItem(userId, JSON.stringify(user));
+    }
   });
 
-  localStorage.removeItem("user_index");
-  user_index = [];
+  renderUsers();
+}
 
+/* RESTORE ALL USERS */
+function restoreAllUsers(){
+  const pass = prompt("Enter admin password:");
+  if(pass !== ADMIN_PASSWORD){
+    alert("Wrong password!");
+    return;
+  }
+
+  if(!confirm("Restore ALL deleted users?")) return;
+
+  user_index.forEach(userId=>{
+    let user = JSON.parse(localStorage.getItem(userId));
+    if(user){
+      user.isDeleted = false;
+      localStorage.setItem(userId, JSON.stringify(user));
+    }
+  });
+
+  alert("All users restored successfully!");
   renderUsers();
 }
 
