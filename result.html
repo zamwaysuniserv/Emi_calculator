@@ -72,6 +72,7 @@ Paid Bills
 <th>Total Plot Price</th>
 <th>Deposit</th>
 <th>Loan</th>
+<th>Total Interest</th>
 <th>EMI</th>
 <th>Duration</th>
 </tr>
@@ -116,13 +117,18 @@ data.interest = Number(data.interestRate || 0);
 data.duration = Number(data.duration || 0);
 data.date = data.date || new Date().toISOString().split('T')[0];
 
-// ✅ AUTO PRICE PER DECIMAL
-data.pricePerDec = data.decimal ? (data.totalPlotPrice / data.decimal) : 0;
+// Price per decimal
+data.oneDecPrice = data.decimal 
+  ? (data.totalPlotPrice / data.decimal) 
+  : 0;
 
 // EMI calculation
 const monthlyRate = data.interest / 12 / 100;
 data.emi = data.loanAmount * monthlyRate * Math.pow(1 + monthlyRate, data.duration) /
            (Math.pow(1 + monthlyRate, data.duration) - 1);
+
+// ✅ TOTAL INTEREST (ONLY ADDITION)
+const totalInterest = (data.emi * data.duration) - data.loanAmount;
 
 // Render main summary
 function renderMain(){
@@ -136,6 +142,7 @@ document.getElementById("mainTable").innerHTML = `
 <td>₹${data.totalPlotPrice.toFixed(2)}</td>
 <td>₹${data.depositAmount.toFixed(2)}</td>
 <td>₹${data.loanAmount.toFixed(2)}</td>
+<td>₹${totalInterest.toFixed(2)}</td>
 <td>₹${data.emi.toFixed(2)}</td>
 <td>${data.duration} Months</td>
 </tr>`;
@@ -148,10 +155,6 @@ function viewReceipt(){
 function viewPaidBills(){
   window.location.href = "paid-bills.html?userId=" + userId;
 }
-
-data.oneDecPrice = data.decimal 
-  ? (data.totalPlotPrice / data.decimal) 
-  : 0;
 
 // EMI schedule
 function generateEMI(){
@@ -171,24 +174,22 @@ for(let month=1; month<=data.duration; month++){
 
 const statusKey = `emi_status_${userId}_${month}`;
 const emiStatus = localStorage.getItem(statusKey);
-
 const paidClass = emiStatus === "PAID" ? "paid" : "";
 
 rows += `<tr class="${paidClass}">
+<td>${month}</td>
+<td>₹${balance.toFixed(2)}</td>
+<td>₹${principalAmt.toFixed(2)}</td>
+<td>₹${interestAmt.toFixed(2)}</td>
+<td>₹${data.emi.toFixed(2)}</td>
+<td>₹${closingBalance.toFixed(2)}</td>
+<td>${emiDateStr}</td>
+<td class="statusCol">
+  <button class="statusBtn" onclick="openStatus(${month})">Check</button>
+</td>
+</tr>`;
 
-    <td>${month}</td>
-    <td>₹${balance.toFixed(2)}</td>
-    <td>₹${principalAmt.toFixed(2)}</td>
-    <td>₹${interestAmt.toFixed(2)}</td>
-    <td>₹${data.emi.toFixed(2)}</td>
-    <td>₹${closingBalance.toFixed(2)}</td>
-    <td>${emiDateStr}</td>
-    <td class="statusCol">
-      <button class="statusBtn" onclick="openStatus(${month})">Check</button>
-    </td>
-  </tr>`;
-
-  balance = closingBalance;
+balance = closingBalance;
 }
 
 document.getElementById("emiSchedule").innerHTML = rows;
@@ -204,3 +205,4 @@ generateEMI();
 </script>
 
 </body>
+</html>

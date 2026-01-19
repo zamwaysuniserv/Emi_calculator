@@ -20,16 +20,8 @@ body{
   box-shadow:0 20px 40px rgba(0,0,0,0.1);
 }
 
-h2{
-  text-align:center;
-  margin-bottom:6px;
-}
-
-.sub{
-  text-align:center;
-  color:#6b7280;
-  margin-bottom:25px;
-}
+h2{text-align:center;margin-bottom:6px;}
+.sub{text-align:center;color:#6b7280;margin-bottom:25px;}
 
 .row{
   display:flex;
@@ -50,17 +42,20 @@ h2{
   font-weight:bold;
 }
 
+.emi-words{
+  margin-top:6px;
+  font-size:14px;
+  color:#374151;
+  font-style:italic;
+}
+
 .signatures{
   display:flex;
   justify-content:space-between;
   margin-top:50px;
 }
 
-.signature-box{
-  width:40%;
-  text-align:center;
-}
-
+.signature-box{width:40%;text-align:center;}
 .signature-line{
   margin-top:50px;
   border-top:1px solid #000;
@@ -68,13 +63,9 @@ h2{
   font-weight:600;
 }
 
-/* Hide buttons while printing */
 @media print{
-  .actions{
-    display:none !important;
-  }
+  .actions{display:none !important;}
 }
-
 
 .actions{
   margin-top:25px;
@@ -106,15 +97,13 @@ button{
   <div id="data"></div>
 
   <div class="signatures">
-  <div class="signature-box">
-    <div class="signature-line">Customer Signature</div>
+    <div class="signature-box">
+      <div class="signature-line">Customer Signature</div>
+    </div>
+    <div class="signature-box">
+      <div class="signature-line">Authorized Signature</div>
+    </div>
   </div>
-
-  <div class="signature-box">
-    <div class="signature-line">Authorized Signature</div>
-  </div>
-</div>
-
 
   <div class="actions">
     <button class="print" onclick="window.print()">Print</button>
@@ -127,6 +116,29 @@ const params = new URLSearchParams(window.location.search);
 const userId = params.get("userId");
 const box = document.getElementById("data");
 
+// 🔢 Number to words (Indian)
+function numberToWords(num){
+  const a = [
+    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six',
+    'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve',
+    'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+    'Seventeen', 'Eighteen', 'Nineteen'
+  ];
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  if(num === 0) return 'Zero';
+
+  function convert(n){
+    if(n < 20) return a[n];
+    if(n < 100) return b[Math.floor(n/10)] + (n%10 ? ' ' + a[n%10] : '');
+    if(n < 1000) return a[Math.floor(n/100)] + ' Hundred ' + convert(n%100);
+    if(n < 100000) return convert(Math.floor(n/1000)) + ' Thousand ' + convert(n%1000);
+    if(n < 10000000) return convert(Math.floor(n/100000)) + ' Lakh ' + convert(n%100000);
+    return convert(Math.floor(n/10000000)) + ' Crore ' + convert(n%10000000);
+  }
+  return convert(num).trim();
+}
+
 if(!userId){
   box.innerHTML = "<p>Invalid receipt</p>";
 }else{
@@ -134,23 +146,33 @@ if(!userId){
   if(!d){
     box.innerHTML = "<p>Data not found</p>";
   }else{
+
+    const totalInterest = (d.emi * d.duration) - d.loanAmount;
+    const totalPayable = d.loanAmount + totalInterest;
+
+    const emiRounded = Math.round(d.emi);
+    const emiInWords = numberToWords(emiRounded) + " Rupees Only";
+
     box.innerHTML = `
       <div class="row"><div class="label">Date</div><div class="value">${d.date}</div></div>
-      <div class="row"><div class="label">Customer</div><div class="value">${d.customerName}</div></div>
-      <div class="row"><div class="label">Mobile</div><div class="value">${d.mobile}</div></div>
-      <div class="row"><div class="label">Address</div><div class="value">${d.address}</div></div>
-      <div class="row"><div class="label">Aadhaar</div><div class="value">${d.aadhaar}</div></div>
-      <div class="row"><div class="label">PAN</div><div class="value">${d.pan}</div></div>
+      <div class="row"><div class="label">Customer Name</div><div class="value">${d.customerName}</div></div>
+      <div class="row"><div class="label">Mobile No</div><div class="value">${d.mobile}</div></div>
+      <div class="row"><div class="label">Address No</div><div class="value">${d.address}</div></div>
 
       <div class="row"><div class="label">Plot No</div><div class="value">${d.plotNumber}</div></div>
-      <div class="row"><div class="label">Plot Size</div><div class="value">${d.decimal} Dec (${d.plotSizeSqFt} Sq Ft)</div></div>
       <div class="row"><div class="label">Total Price</div><div class="value">₹ ${d.totalPlotPrice}</div></div>
       <div class="row"><div class="label">Deposit</div><div class="value">₹ ${d.depositAmount}</div></div>
-      <div class="row"><div class="label">Loan</div><div class="value">₹ ${d.loanAmount}</div></div>
-      <div class="row"><div class="label">Interest</div><div class="value">${d.interestRate}%</div></div>
+
+      <div class="row"><div class="label">Credit Amount</div><div class="value">₹ ${d.loanAmount}</div></div>
+      <div class="row"><div class="label">Total Interest</div><div class="value">₹ ${totalInterest.toFixed(2)}</div></div>
+      <div class="row"><div class="label">Total Payable Amount</div><div class="value">₹ ${totalPayable.toFixed(2)}</div></div>
+
       <div class="row"><div class="label">Duration</div><div class="value">${d.duration} Months</div></div>
 
-      <div class="total">Monthly EMI: ₹ ${d.emi.toFixed(2)}</div>
+      <div class="total">
+        Monthly EMI: ₹ ${d.emi.toFixed(2)}
+        <div class="emi-words">(${emiInWords})</div>
+      </div>
     `;
   }
 }

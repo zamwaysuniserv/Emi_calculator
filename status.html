@@ -144,8 +144,8 @@ th{
 <tr>
 <th>EMI Month</th>
 <th>EMI Date</th>
-<th>Principal</th>
-<th>Interest</th>
+<!-- <th>Principal</th>
+<th>Interest</th> -->
 <th>EMI</th>
 <th>Remaining Balance</th>
 </tr>
@@ -259,8 +259,6 @@ document.getElementById("emiData").innerHTML = `
 <tr>
 <td>${month}</td>
 <td>${emiDateStr}</td>
-<td>₹${principalAmt.toFixed(2)}</td>
-<td>₹${interestAmt.toFixed(2)}</td>
 <td>₹${emi.toFixed(2)}</td>
 <td>₹${closingBalance.toFixed(2)}</td>
 </tr>

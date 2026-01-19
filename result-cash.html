@@ -81,6 +81,7 @@ Download PDF
   <th>1 Dec Price</th>
   <th>Total Plot Price</th>
   <th>Deposit</th>
+  <th>Total Interest</th>
   <th>Remaining</th>
   <th>Cash Duration</th>
 </tr>
@@ -123,6 +124,9 @@ const oneDecPrice = data.decimal
   ? (data.totalPlotPrice / data.decimal)
   : 0;
 
+// ✅ CASH → NO INTEREST
+const totalInterest = 0;
+
 // ================= MAIN TABLE RENDER =================
 document.getElementById("mainTable").innerHTML = `
 <tr>
@@ -133,6 +137,7 @@ document.getElementById("mainTable").innerHTML = `
   <td>₹${oneDecPrice.toFixed(2)}</td>
   <td>₹${total.toFixed(2)}</td>
   <td>₹${deposit.toFixed(2)}</td>
+  <td>₹${totalInterest.toFixed(2)}</td>
   <td>₹${remainingTotal.toFixed(2)}</td>
   <td>${duration} Months</td>
 </tr>
